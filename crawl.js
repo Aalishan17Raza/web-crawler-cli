@@ -1,22 +1,40 @@
 const { JSDOM } = require("jsdom");
 
-async function crawlPage(currentUrl) {
+async function crawlPage(baseUrl, currentUrl, pages) {
+    const baseURLObj = new URL(baseUrl);
+    const currentUrlObj = new URL(currentUrl);
+    if (baseURLObj.hostname !== currentUrlObj.hostname) {
+        return pages;
+    }
+    const normalizedCurrentUrl = NormalizeUrl(currentUrl);
+    if (pages[normalizedCurrentUrl] > 0) {
+        pages[normalizedCurrentUrl]++;
+        return pages;
+    }
+    pages[normalizedCurrentUrl] = 1;
+
     console.log(`actively crawling: ${currentUrl}`);
-    try {     
-        const res= await fetch(currentUrl);
-        if(res.status>399){
+
+    try {
+        const res = await fetch(currentUrl);
+        if (res.status > 399) {
             console.log(`error while fetching with status code:${res.status}, on page ${currentUrl}`);
-            return;
+            return pages;
         }
-        
-        if(!res.headers.get("content-type").includes('text/html')){
+
+        if (!res.headers.get("content-type").includes('text/html')) {
             console.log(`not html content type :${res.headers.get("content-type")}, on page ${currentUrl}`);
-            return;
+            return pages;
         }
-        console.log(await res.text());
+        const htmlBody = await res.text();
+        nextURLs = getUrlsFromHTML(htmlBody, baseUrl);
+        for (const nextURL of nextURLs) {
+            pages = await crawlPage(baseUrl, nextURL, pages);
+        }
     } catch (error) {
         console.log(`Error: ${error.message} while fetching ${currentUrl} `);
     }
+    return pages;
 }
 
 function getUrlsFromHTML(HTMLbody, baseUrl) {
@@ -33,7 +51,7 @@ function getUrlsFromHTML(HTMLbody, baseUrl) {
                 console.log("invalid url");
             }
 
-        }else{
+        } else {
             //absolute url
             try {
                 const urlObj = new URL(linkElement.href);
@@ -55,4 +73,4 @@ function NormalizeUrl(url) {
     return fullPath.toLowerCase();
 }
 
-module.exports = { NormalizeUrl, getUrlsFromHTML,crawlPage };
+module.exports = { NormalizeUrl, getUrlsFromHTML, crawlPage };
