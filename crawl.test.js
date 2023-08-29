@@ -5,6 +5,14 @@ test('NormalizeUrl', () => {
 });
 
 test('NormalizeUrl', () => {
+    expect(NormalizeUrl("http://blog.boot.dev/")).toBe("blog.boot.dev");
+});
+
+test('NormalizeUrl', () => {
+    expect(NormalizeUrl("http://blog.boot.dev")).toBe("blog.boot.dev");
+});
+
+test('NormalizeUrl', () => {
     expect(NormalizeUrl("https://Blog.boot.dev/path/")).toBe("blog.boot.dev/path");
 });
 
